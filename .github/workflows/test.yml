@@ -33,7 +33,7 @@ jobs:
             - name: Generate trickle blocks
               id: getBlockData
               run: |
-                content=`python3 generate_pr_tmpt.py -t ${{ github.event.pull_request.title }} -b prbody.txt`
+                content=`python3 generate_pr_tmpt.py -t "${{ github.event.pull_request.title }}" -b prbody.txt`
                 echo "::set-output name=blockDataJson::$content"
 
             # Send trickle
