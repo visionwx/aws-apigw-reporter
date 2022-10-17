@@ -1,25 +1,31 @@
 name: Testing AWS
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
 
 env:
-  workspaceId: "364397913113100291"
-  memberId: "364404407103651845"
-  channelId: "364397913113165830"
-  trickleId: "578759146069819400"
-  AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
-  AWS_S3_KEY_SECRET: ${{ secrets.AWS_S3_KEY_SECRET }}
-  AWS_S3_BUCKET_NAME: boom2-web-statc-test
-  AWS_S3_COMPONENT_BUCKET_NAME: trickle-component
-  AWS_S3_REGION: us-east-1
-  AWS_CLOUD_FRONT_DISTRIBUTION_ID: E28OIAI99C3YGA
-  AWS_DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_KEY }}
-  AWS_DEPLOY_SECRET: ${{ secrets.AWS_DEPLOY_SECRET }}
+    AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
+    AWS_S3_KEY_SECRET: ${{ secrets.AWS_S3_KEY_SECRET }}
+    AWS_S3_BUCKET_NAME: boom2-web-statc-test
+    AWS_S3_COMPONENT_BUCKET_NAME: trickle-component
+    AWS_S3_REGION: us-east-1
+    AWS_CLOUD_FRONT_DISTRIBUTION_ID: E28OIAI99C3YGA
+    AWS_DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_KEY }}
+    AWS_DEPLOY_SECRET: ${{ secrets.AWS_DEPLOY_SECRET }}
+    AWS_LAMBDA_FUNCTION_NAME: trickle_ssr_dev
+    ECR_REGISTRY: 257417524232.dkr.ecr.us-east-1.amazonaws.com
+    IMAGE_NAME: trickle-ssr
+    AWS_DEFAULT_REGION: us-east-1
+    AWS_LAMBDA_EDGE_FUNCTION_NAME: trickle_edge_dev
+    AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
+    workspaceId: "364397913113100291"
+    memberId: "364404407103651845"
+    channelId: "364397913113165830"
+    trickleId: "578759146069819400"
 
 jobs:
-    test:
-        name: test AWS
+    test_invoke_lambda:
+        name: test_invoke_lambda
         runs-on: ubuntu-latest
         steps:
             # Pull Code
@@ -33,7 +39,7 @@ jobs:
                   aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
                   aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
                   aws-region: ${{ env.AWS_S3_REGION }}
-
+            
             # Send Query Request
             - name: Send query reuqest
               id: query
@@ -48,7 +54,7 @@ jobs:
                 content="${content//$'\n'/'%0A'}"
                 content="${content//$'\r'/'%0D'}"
                 echo "::set-output name=queryResult::$content"
-            
+
             # Get Query Result
             - name: Get query result
               run: |
