@@ -5,6 +5,12 @@ on:
         types: [closed]
         branches: [main]
 
+env:
+  workspaceId: "364397913113100291"
+  memberId: "364404407103651845"
+  channelId: "364397913113165830"
+  trickleId: "578759146069819400"
+
 jobs:
     test:
         name: test
@@ -23,3 +29,21 @@ jobs:
                 echo ${{ github.event.pull_request.head.ref }} --> ${{ github.event.pull_request.base.ref }}
                 echo "${{ github.event.pull_request.body }}" > pr_body.txt
                 cat pr_body.txt
+            
+            # Generate trickle blocks
+            - name: Generate trickle blocks
+              id: getBlockData
+              run: |
+                content=`python3 generate_pr_tmpt.py -t ${{ github.event.pull_request.title }} -b "${{ github.event.pull_request.body }}"`
+                echo "::set-output name=blockDataJson::$content"
+
+            # Send trickle
+            - name: Send trickle
+              uses: visionwx/trickle-sender@v1.0.4
+              with:
+                trickleToken: ${{ secrets.trickleToken }}
+                workspaceId: ${{ env.workspaceId }}
+                memberId: ${{ env.memberId }}
+                channelId: ${{ env.channelId }}
+                blockType: trickle
+                blockData: '${{ steps.getBlockData.outputs.blockDataJson }}'
