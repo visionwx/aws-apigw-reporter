@@ -46,8 +46,8 @@ jobs:
               run: |
                 aws logs start-query \
                   --log-group-name API_GW_LIVE_V1 \
-                  --start-time `date -v-1d "+%s"` \
-                  --end-time `date "+%s"` \
+                  --start-time `date -d "2022-10-16 00:00:00" +%s` \
+                  --end-time `date -d "2022-10-17 00:00:00" +%s` \
                   --query-string 'fields @timestamp, @message | stats count() by bin(15m)' > query_request.json
                 content=`cat query_request.json`
                 content="${content//'%'/'%25'}"
