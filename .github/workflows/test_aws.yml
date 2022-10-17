@@ -1,0 +1,50 @@
+name: Testing AWS
+
+on:
+  workflow_dispatch:
+
+env:
+  workspaceId: "364397913113100291"
+  memberId: "364404407103651845"
+  channelId: "364397913113165830"
+  trickleId: "578759146069819400"
+  AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
+  AWS_S3_KEY_SECRET: ${{ secrets.AWS_S3_KEY_SECRET }}
+  AWS_S3_BUCKET_NAME: boom2-web-statc-test
+  AWS_S3_COMPONENT_BUCKET_NAME: trickle-component
+  AWS_S3_REGION: us-east-1
+  AWS_CLOUD_FRONT_DISTRIBUTION_ID: E28OIAI99C3YGA
+  AWS_DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_KEY }}
+  AWS_DEPLOY_SECRET: ${{ secrets.AWS_DEPLOY_SECRET }}
+
+jobs:
+    test:
+        name: test AWS
+        runs-on: ubuntu-latest
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                aws-region: ${{ env.AWS_S3_REGION }}
+
+            # Send Query Request
+            - name: Send query reuqest
+              run: |
+                aws logs start-query \
+                  --log-group-name API_GW_LIVE_V1 \
+                  --start-time `date -v-1d "+%s"` \
+                  --end-time `date "+%s"` \
+                  --query-string 'fields @timestamp, @message | stats count() by bin(15m)' > query_result.json
+                echo ${{ toJSON(`cat query_result.json`) }}
+            
+            # Get Query Result
+            # - name: Get query result
+            #   run: |
+            #     aws logs get-query-results --query-id ee70a85d-33c0-4ac2-8ba1-5df9b5dbb7be
