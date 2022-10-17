@@ -1,0 +1,39 @@
+name: 'AWS API Gateway Reporter'
+description: 'This action is used to generate aws api gateway report'
+inputs:
+  awsKeyId:
+    description: 'aws access key id'
+    required: true
+  awsKeySecret:
+    description: 'aws access key secret'
+    required: true
+  awsRegion:
+    description: 'aws region'
+    required: true
+  awsApiGwLogGroup:
+    description: 'aws api gateway log group name'
+    required: true
+outputs:
+  random-number:
+    description: "Random number"
+    value: ${{ steps.random-number-generator.outputs.random-number }}
+runs:
+  using: "composite"
+  steps:
+    # Configure AWS S3
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ inputs.awsKeyId }}
+        aws-secret-access-key: ${{ inputs.awsKeySecret }}
+        aws-region: ${{ inputs.awsRegion }}
+    # Query log
+    - name: Run apiGW log query
+      run: |
+        aws logs start-query \
+          --log-group-name ${{ inputs.awsApiGwLogGroup }} \
+          --start-time `date -v-1d "+%s"` \
+          --end-time `date "+%s"` \
+          --query-string 'fields @timestamp, @message | stats count() by bin(15m)' > query_result.json
+        aws logs get-query-results --query-id ee70a85d-33c0-4ac2-8ba1-5df9b5dbb7be
+      shell: bash
