@@ -1,0 +1,87 @@
+<!--
+	此示例下载自 https://echarts.apache.org/examples/zh/editor.html?c=line-gradient&code=PTAEAcCcFMBdYJbUgWgQcwHYHsYCgBjbTAZ1lABMBDWK0AXlAG0mByAJgAZ32UBGTvz6hOADgBcAFgCs4zpwB08zqwA0oVn2msAuurZce_QX2GcAnHM5Wl8tRvYzd-jt14ChIy1pvL7mgDZRZ2ZXIw9TL3EAZmt5WxV1VljtPVDDdxMzSxlfOyTRAJCDN2NPASs8xI0BFTSS8KzQCp94vyS-aKL6sMzy61iq_1NJYt6yyIrctvyarjGMieFTSpnq1gB2UZ7FiOW-cVbFdo0A8wXSveaDwbX_DfOdy6aV6ePZzdSXXZf2Vff1gJtt9nuU_kcEv5RI8QY0wTE4gD_OZurC-pM_m9IR07E84ZNov9sTVosD0qCCYdZHckuY6mils1CbckUkAhsLvjloSsSdNvTyVzmpIiXzROxOejliKIXyHpLGXwRSziawAl9BVLhVJqazTjDNYrdUMkhsNQ0tT5ZR9Ohy8ZbZCqxXwFVcfLybdxXS8AqKPqIBRbFb7retRMF7cGESaNOZzeM3b6PesNi7I26Nn6U2SgxmqTHWOZot7ypmnf6DbmXpnk1DKwmXhJ5AXRPGfuUJKG6yXJhJy2GIwy3RJawVUYa3ZZmzSanxx1Xyt5darzGmhy9LP2oW2KcscsuxfX25EuFmoXb155T13TYGG1eBojVdJ5_eT9ZRxppHfj8J2Adpz1TQ-AvCcmn_fMZ1YaQczfP8bifPl2R7eCdQLDZi3TcC_kA1VJFfX9QB4SCgLNFCiL-LckmkNcwKvTEDw-IJyPYQlcL5GiWMJG8NA2UCFxPZlEKY_i4KInlGPWb8e3YEREXQ2iBNk5seOg2Dj2Ux8C2kI8KU0tCoICRS32UgDhMBaIJSw_hTJI1VTB_PSRAQgtTEwy8-Fsz9NkHOjPJEHDzKhXylICuy-VMUSNLCqiHEkKKnO4AygPYIsZJENigqSdgAkc_FlO4yT_B4dy_IK6MoM8kKTIy5L7ICKyPOUkV2I-dgNgIxKZSK2kEvykRlSy048vRZq6oi6RGrKkRjUq3L0s4WRVNiXT-sWiqgOiTjrP89bvOiaJquizhfVawFWIWkMeoccxVtGkRfVi5J4su8abUkO6JmUzMzv8SRTAWzNVPYUR1MSsshug9rAbe9ZWLBtam0hnLPoiZTO2u5I-IWvtIb4W6cdh4rDt0HQAG5CGIMhKBoaAABkEGpxhqFoBQAFsqHAAAKAAzABXTACEQYhQC5hBYGgNmAEpQAAbzwUBQBgWA-cgTBQHFyWmE4HQFBIcAABtxa5gAiUATalpg-F1mBDaoAhoFNqoTdUE2LYpgBfKWKaIUhyAANyoA2-fpxnyGZmgqHZzneYFoWEBFsWJeluWFaVuBVfVzW2at8m8C9insHAYX1cYeXFZAUAAFkqAAa2gUB0EgKgKCQTByCNzAG4AC2QaA0_9xm-aDmvwHEZg08V8vFZnkhu-wAB3ceeaDkhoFUSeZ9gABPcBoHH1hfcQTA-ewPmSDUTfFbXyAkBIABJTAKGgAAPcfOA3meZ7ZhBMHfz-v6gA5m_UAkh5Cbw9gAvQadECwANvvCeX9p5f3gTzWAB8Hbt2QJfQBoAJYv3QRoAAggABXvqAAA4rTBeVBt6gAAErQAAI4hzICQCAyBmjSDZqwCBUCAGwGwNgA2iAx6py_rAW-6B0DIAPlQF-jNeGK0gWnF-RCFEkHHkwTeyCZ4syoOPFmocyB8LTtAxW291GMy0TolRitzGN1vhQGxSCr6gAAEbYHgNgNmB8wEAFIlEzzsaABxN874uJnroxWO894H07tAHBgC56LwAMrbzZp4g2y9V7rzcfo8egdg7GNgKY-x-cyZAA
+	⚠ 请注意，该图表不是 Apache ECharts 官方示例，而是由用户代码生成的。请注意鉴别其内容。
+-->
+<!DOCTYPE html>
+<html lang="zh-CN" style="height: 100%">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+  <div id="container" style="height: 100%"></div>
+
+  <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/jquery"></script>
+  <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+
+  <script type="text/javascript">
+    var dom = document.getElementById('container');
+    var myChart = echarts.init(dom, null, {
+      renderer: 'canvas',
+      useDirtyRect: false
+    });
+    var app = {};
+    var option;
+
+    myChart.showLoading();
+    $.get(document.location.href + '.json', function (data) {
+        myChart.hideLoading();
+        const dateList = data.map(function (item) {
+            return item[0].split(" ")[1].replace(":00.000","");
+        });
+        const valueList = data.map(function (item) {
+            return item[1];
+        });
+        option = {
+            // Make gradient line here
+            visualMap: [
+                {
+                show: false,
+                type: 'continuous',
+                seriesIndex: 0,
+                min: 0,
+                max: 400
+                },
+            ],
+            title: [
+                {
+                left: 'center',
+                text: 'API Gateway Requests per 15m'
+                },
+            ],
+            tooltip: {
+                trigger: 'axis'
+            },
+            xAxis: [
+                {
+                data: dateList
+                },
+            ],
+            yAxis: [
+                {},
+            ],
+            grid: [
+                {
+                bottom: '40%'
+                },
+            ],
+            series: [
+                {
+                type: 'line',
+                showSymbol: false,
+                data: valueList
+                },
+            ]
+        };
+        myChart.setOption(option);
+    });
+
+    
+
+    if (option && typeof option === 'object') {
+      myChart.setOption(option);
+    }
+
+    window.addEventListener('resize', myChart.resize);
+  </script>
+</body>
+</html>
