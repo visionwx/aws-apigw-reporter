@@ -3,7 +3,7 @@ name: Testing
 on:
     pull_request:
         types: [closed]
-        branches: [main]
+        branches: [main_test]
 
 env:
   workspaceId: "364397913113100291"
