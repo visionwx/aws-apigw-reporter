@@ -63,6 +63,12 @@ jobs:
                 content="${content//$'\r'/'%0D'}"
                 echo "::set-output name=queryResult::$content"
 
+            # sleep 10s
+            - name: Sleep for 10s
+              uses: juliangruber/sleep-action@v1
+              with:
+                time: 10s
+
             # Get Query Result
             - name: Get query result
               run: |
