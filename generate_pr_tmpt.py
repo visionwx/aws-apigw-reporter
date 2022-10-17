@@ -17,8 +17,8 @@ TMPT = [
     "value": "Update workflow"
   },
   {
-    "type": "text",
-    "value": "- featue 1,ajiwoefjowqeqwe\n- feature 2,ajoiefjoweiofwqe\n- feature 3,aejioweofiqwoe"
+    "type": "bulletpoint",
+    "value": []
   }
 ]
 
@@ -28,7 +28,7 @@ def parseArgs():
     ap.add_argument("-t", "--title", required=True, 
         type=str, default=None, help="pr title")
     ap.add_argument("-b", "--body", required=True, 
-        type=str, default=None, help="pr body")
+        type=str, default=None, help="pr body file")
     args = vars(ap.parse_args())
     return args
 
@@ -38,7 +38,10 @@ def main():
 
     # r = json.load(open(args['jsonFile'],'r'))
     TMPT[2]["value"] = args['title']
-    TMPT[3]["value"] = args['body']
+    with open(args['body'],'r') as f:
+        allLines = f.readlines()
+        allLines = [perLine.replace("\n","") for perLine in allLines]
+    TMPT[3]["value"] = allLines
 
     print(json.dumps(TMPT))
 

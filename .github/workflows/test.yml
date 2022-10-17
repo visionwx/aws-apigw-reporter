@@ -27,14 +27,13 @@ jobs:
                 echo ${{ github.event.sender.login }}
                 echo ${{ github.event.pull_request.commits_url }}
                 echo ${{ github.event.pull_request.head.ref }} --> ${{ github.event.pull_request.base.ref }}
-                echo "${{ github.event.pull_request.body }}" | tr '\n' '|'
+                echo "${{ github.event.pull_request.body }}" > prbody.txt
             
             # Generate trickle blocks
             - name: Generate trickle blocks
               id: getBlockData
               run: |
-                prb=`echo "${{ github.event.pull_request.body }}" | tr '\n' '|'`
-                content=`python3 generate_pr_tmpt.py -t ${{ github.event.pull_request.title }} -b $prb`
+                content=`python3 generate_pr_tmpt.py -t ${{ github.event.pull_request.title }} -b prbody.txt`
                 echo "::set-output name=blockDataJson::$content"
 
             # Send trickle
