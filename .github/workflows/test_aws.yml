@@ -36,15 +36,22 @@ jobs:
 
             # Send Query Request
             - name: Send query reuqest
+              id: query
               run: |
                 aws logs start-query \
                   --log-group-name API_GW_LIVE_V1 \
                   --start-time `date -v-1d "+%s"` \
                   --end-time `date "+%s"` \
-                  --query-string 'fields @timestamp, @message | stats count() by bin(15m)' > query_result.json
-                echo ${{ toJSON(`cat query_result.json`) }}
+                  --query-string 'fields @timestamp, @message | stats count() by bin(15m)' > query_request.json
+                content=`cat query_request.json`
+                content="${content//'%'/'%25'}"
+                content="${content//$'\n'/'%0A'}"
+                content="${content//$'\r'/'%0D'}"
+                echo "::set-output name=queryResult::$content"
             
             # Get Query Result
-            # - name: Get query result
-            #   run: |
-            #     aws logs get-query-results --query-id ee70a85d-33c0-4ac2-8ba1-5df9b5dbb7be
+            - name: Get query result
+              run: |
+                echo "${{fromJson(steps.query.outputs.queryResult).queryId}}"
+                aws logs get-query-results --query-id ${{fromJson(steps.query.outputs.queryResult).queryId}} > query_result.json
+                cat query_result.json
