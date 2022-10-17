@@ -20,5 +20,6 @@ jobs:
                 echo ${{ github.event.pull_request.title }}
                 echo ${{ github.event.sender.login }}
                 echo ${{ github.event.pull_request.commits_url }}
-                echo ${{ github.event.pull_request.head.ref }} --> ${{ github.event.base.ref }}
-                echo "${{ github.event.pull_request.body }}"
+                echo ${{ github.event.pull_request.head.ref }} --> ${{ github.event.pull_request.base.ref }}
+                echo "${{ github.event.pull_request.body }}" > pr_body.txt
+                cat pr_body.txt
