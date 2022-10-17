@@ -18,6 +18,7 @@ jobs:
             - name: Check pull_request info
               run: |
                 echo ${{ github.event.pull_request.title }}
-                echo ${{ github.event.pull_request.body }}
                 echo ${{ github.event.sender.login }}
                 echo ${{ github.event.pull_request.commits_url }}
+                echo ${{ github.event.pull_request.head.ref }} --> ${{ github.event.base.ref }}
+                echo "${{ github.event.pull_request.body }}"
