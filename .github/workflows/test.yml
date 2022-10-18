@@ -5,11 +5,11 @@ on:
         types: [closed]
         branches: [main]
 
-env:
-  workspaceId: "364397913113100291"
-  memberId: "409788576109166597"
-  channelId: "364397913113165830"
-  trickleId: "590432394733944840"
+# env:
+#   workspaceId: "364397913113100291"
+#   memberId: "409788576109166597"
+#   channelId: "364397913113165830"
+#   trickleId: "590432394733944840"
 
 jobs:
     test:
@@ -42,9 +42,9 @@ jobs:
               uses: visionwx/trickle-sender@v1.0.4
               with:
                 trickleToken: ${{ secrets.trickleToken }}
-                workspaceId: ${{ env.workspaceId }}
-                memberId: ${{ env.memberId }}
-                channelId: ${{ env.channelId }}
-                trickleId: ${{ env.trickleId }}
+                workspaceId: ${{ secrets.TRICKLE_WORKSPACE_ID }}
+                memberId: ${{ secrets.TRICKLE_MEMBER_ID }}
+                channelId: ${{ secrets.TRICKLE_CHANNEL_ID }}
+                trickleId: ${{ secrets.DEV_TRICKLE_ID }}
                 blockType: comment
-                blockData: '[{"type":"text","value":"PR Closed, ${{ github.event.pull_request.title }},  ${{ github.event.pull_request.head.ref }} --> ${{ github.event.pull_request.base.ref }}, trigger by ${{ github.event.sender.login }}"}]'
+                blockData: '[{"type":"text","value":"--> Hello all, DEV Env Updated, from ${{ github.event.pull_request.head.ref }} into ${{ github.event.pull_request.base.ref }}, trigger by ${{ github.event.sender.login }}"}]'
