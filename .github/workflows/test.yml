@@ -11,6 +11,12 @@ on:
 #   channelId: "364397913113165830"
 #   trickleId: "590432394733944840"
 
+env:
+  TRICKLE_WORKSPACE_ID: ${{ secrets.TRICKLE_WORKSPACE_ID }}
+  TRICKLE_MEMBER_ID: ${{ secrets.TRICKLE_MEMBER_ID }}
+  TRICKLE_CHANNEL_ID: ${{ secrets.TRICKLE_CHANNEL_ID }}
+  DEV_TRICKLE_ID: ${{ secrets.DEV_TRICKLE_ID }}
+
 jobs:
     test:
         name: test
@@ -42,9 +48,9 @@ jobs:
               uses: visionwx/trickle-sender@v1.0.4
               with:
                 trickleToken: ${{ secrets.trickleToken }}
-                workspaceId: ${{ secrets.TRICKLE_WORKSPACE_ID }}
-                memberId: ${{ secrets.TRICKLE_MEMBER_ID }}
-                channelId: ${{ secrets.TRICKLE_CHANNEL_ID }}
-                trickleId: ${{ secrets.DEV_TRICKLE_ID }}
+                workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
+                memberId: ${{ env.TRICKLE_MEMBER_ID }}
+                channelId: ${{ env.TRICKLE_CHANNEL_ID }}
+                trickleId: ${{ env.DEV_TRICKLE_ID }}
                 blockType: comment
                 blockData: '[{"type":"text","value":"--> Hello all, DEV Env Updated, from ${{ github.event.pull_request.head.ref }} into ${{ github.event.pull_request.base.ref }}, trigger by ${{ github.event.sender.login }}"}]'
