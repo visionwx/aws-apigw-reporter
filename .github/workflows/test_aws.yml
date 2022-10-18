@@ -24,9 +24,11 @@ env:
     trickleId: "578759146069819400"
 
 jobs:
-    test_invoke_lambda:
-        name: test_invoke_lambda
+    rps:
+        name: rps
         runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
         steps:
             # Pull Code
             - name: Pull repo
@@ -90,6 +92,79 @@ jobs:
                 reportUrl=https://devres.trickle.so/miniapps/$ldate/rps.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
+    status:
+        name: status
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                aws logs start-query \
+                  --log-group-name API_GW_LIVE_V1 \
+                  --start-time `date -d "$ldate 00:00:00" +%s` \
+                  --end-time `date -d "$cdate 00:00:00" +%s` \
+                  --query-string 'fields @timestamp, @message | stats count() as statusCount by status | sort statusCount desc' > query_request.json
+                content=`cat query_request.json`
+                content="${content//'%'/'%25'}"
+                content="${content//$'\n'/'%0A'}"
+                content="${content//$'\r'/'%0D'}"
+                echo "::set-output name=queryResult::$content"
+
+            # sleep 10s
+            - name: Sleep for 10s
+              uses: juliangruber/sleep-action@v1
+              with:
+                time: 10s
+
+            # Get Query Result
+            - name: Get query result
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                echo "${{fromJson(steps.query.outputs.queryResult).queryId}}"
+                aws logs get-query-results --query-id ${{fromJson(steps.query.outputs.queryResult).queryId}} > query_result.json
+                mv query_result.json status_result.json
+                python3 parse_status_result.py
+                mkdir -p out/$ldate
+                cp status.html out/$ldate
+                cp status.html.json out/$ldate
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync out/$ldate s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/status.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    send-trickle:
+        name: send-trickle
+        runs-on: ubuntu-latest
+        needs: [rps,status]
+        steps:
             # Send trickle
             - name: Send trickle
               uses: visionwx/trickle-sender@v1.0.4
@@ -99,4 +174,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"embed","value":"${{ steps.upload.outputs.reportUrl }}"}]'
+                blockData: '[{"type":"embed","value":"${{ needs.status.outputs.reportUrl }}"},{"type":"embed","value":"${{ needs.rps.outputs.reportUrl }}"}]'
