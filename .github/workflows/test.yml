@@ -47,4 +47,4 @@ jobs:
                 channelId: ${{ env.channelId }}
                 trickleId: ${{ env.trickleId }}
                 blockType: comment
-                blockData: '[{"type":"text","value":"Dev env has been update by ${{ github.event.user.login }} ${{ github.event.sender.login }}"}]'
+                blockData: '[{"type":"text","value":"PR Closed, ${{ github.event.pull_request.title }},  ${{ github.event.pull_request.head.ref }} --> ${{ github.event.pull_request.base.ref }}, trigger by ${{ github.event.sender.login }}"}]'
