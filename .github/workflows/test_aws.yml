@@ -83,6 +83,20 @@ jobs:
             
             # Upload report
             - name: Upload report
+              id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
                 aws s3 sync out/$ldate s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/rps.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+            # Send trickle
+            - name: Send trickle
+              uses: visionwx/trickle-sender@v1.0.4
+              with:
+                trickleToken: ${{ secrets.trickleToken }}
+                workspaceId: "364397913113100291"
+                memberId: "409788576109166597"
+                channelId: "364397913113165830"
+                blockType: trickle
+                blockData: '[{"type":"embed","value":"${{ steps.upload.outputs.reportUrl }}"}]'

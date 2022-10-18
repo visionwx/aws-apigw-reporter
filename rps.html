@@ -23,29 +23,29 @@
     var option;
 
     myChart.showLoading();
-    $.get(document.location.href + '.json', function (data) {
+    $.get(document.location.href + '.json', function (rpsData) {
         myChart.hideLoading();
-        const dateList = data.map(function (item) {
+        const dateList = rpsData.data.map(function (item) {
             return item[0].split(" ")[1].replace(":00.000","");
         });
-        const valueList = data.map(function (item) {
+        const valueList = rpsData.data.map(function (item) {
             return item[1];
         });
         option = {
             // Make gradient line here
             visualMap: [
                 {
-                show: false,
-                type: 'continuous',
-                seriesIndex: 0,
-                min: 0,
-                max: 400
+                    show: false,
+                    type: 'continuous',
+                    seriesIndex: 0,
+                    min: 0,
+                    max: 400
                 },
             ],
             title: [
                 {
-                left: 'center',
-                text: 'API Gateway Requests per 15m'
+                    left: 'center',
+                    text: 'API Gateway Requests per 15m'
                 },
             ],
             tooltip: {
@@ -53,7 +53,8 @@
             },
             xAxis: [
                 {
-                data: dateList
+                    name: "Time",
+                    data: dateList
                 },
             ],
             yAxis: [
@@ -61,14 +62,15 @@
             ],
             grid: [
                 {
-                bottom: '40%'
+                    bottom: '5%'
                 },
             ],
             series: [
                 {
-                type: 'line',
-                showSymbol: false,
-                data: valueList
+                    type: 'line',
+                    showSymbol: false,
+                    data: valueList,
+                    name: rpsData.startDate.split(" ")[0]
                 },
             ]
         };

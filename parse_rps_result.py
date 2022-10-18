@@ -28,14 +28,28 @@ def getFiledValue(data):
     return [dateVal,countVal]
 
 def convertData(data):
-    out = []
+    out = {
+        "startDate": "",
+        "endDate": "",
+        "data": [],
+        "totalMatch": ""
+    }
+    totalMatch = data.get("statistics",{}).get("recordsMatched",0)
+    out["totalMatch"] = totalMatch
     datas = data.get("results",[])
+    i = 0
+    perData2 = None
     for perData in datas[::-1]:
+        i += 1
         try:
             perData2 = getFiledValue(perData)
-            out.append(perData2)
+            out["data"].append(perData2)
+            if i == 1:
+                out["startDate"] = perData2[0]
         except:
             pass
+    if perData2 is not None:
+        out["endDate"] = perData2[0] 
     return out
 
 def main():
