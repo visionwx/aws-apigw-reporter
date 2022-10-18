@@ -3,13 +3,13 @@ name: Testing
 on:
     pull_request:
         types: [closed]
-        branches: [main_test]
+        branches: [main]
 
 env:
   workspaceId: "364397913113100291"
-  memberId: "364404407103651845"
+  memberId: "409788576109166597"
   channelId: "364397913113165830"
-  trickleId: "578759146069819400"
+  trickleId: "590432394733944840"
 
 jobs:
     test:
@@ -25,24 +25,26 @@ jobs:
               run: |
                 echo ${{ github.event.pull_request.title }}
                 echo ${{ github.event.sender.login }}
+                echo ${{ github.event.user.login }}
                 echo ${{ github.event.pull_request.commits_url }}
                 echo ${{ github.event.pull_request.head.ref }} --> ${{ github.event.pull_request.base.ref }}
                 echo "${{ github.event.pull_request.body }}" > prbody.txt
             
             # Generate trickle blocks
-            - name: Generate trickle blocks
-              id: getBlockData
-              run: |
-                content=`python3 generate_pr_tmpt.py -t "${{ github.event.pull_request.title }}" -b prbody.txt`
-                echo "::set-output name=blockDataJson::$content"
+            # - name: Generate trickle blocks
+            #   id: getBlockData
+            #   run: |
+            #     content=`python3 generate_pr_tmpt.py -t "${{ github.event.pull_request.title }}" -b prbody.txt`
+            #     echo "::set-output name=blockDataJson::$content"
 
             # Send trickle
-            - name: Send trickle
+            - name: Send trickle comment
               uses: visionwx/trickle-sender@v1.0.4
               with:
                 trickleToken: ${{ secrets.trickleToken }}
                 workspaceId: ${{ env.workspaceId }}
                 memberId: ${{ env.memberId }}
                 channelId: ${{ env.channelId }}
-                blockType: trickle
-                blockData: '${{ steps.getBlockData.outputs.blockDataJson }}'
+                trickleId: ${{ env.trickleId }}
+                blockType: comment
+                blockData: '[{"type":"text","value":"Dev env has been update by ${{ github.event.user.login }} ${{ github.event.sender.login }}"}]'
