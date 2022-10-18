@@ -19,7 +19,7 @@ env:
     AWS_LAMBDA_EDGE_FUNCTION_NAME: trickle_edge_dev
     AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
     workspaceId: "364397913113100291"
-    memberId: "364404407103651845"
+    memberId: "409788576109166597"
     channelId: "364397913113165830"
     trickleId: "578759146069819400"
 
@@ -95,8 +95,8 @@ jobs:
               uses: visionwx/trickle-sender@v1.0.4
               with:
                 trickleToken: ${{ secrets.trickleToken }}
-                workspaceId: "364397913113100291"
-                memberId: "409788576109166597"
-                channelId: "364397913113165830"
+                workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
+                memberId: ${{ env.TRICKLE_MEMBER_ID }}
+                channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
                 blockData: '[{"type":"embed","value":"${{ steps.upload.outputs.reportUrl }}"}]'
