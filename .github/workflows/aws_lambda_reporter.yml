@@ -223,10 +223,295 @@ jobs:
                 reportUrl=https://devres.trickle.so/miniapps/$ldate/concurrent/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
+    lambda_error:
+        name: lambda_error
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/error
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP }} > outs/trickle_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_ASYNC }} > outs/trickle_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_APP }} > outs/socket_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_SEND }} > outs/socket_send.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_APP }} > outs/baas_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t Errors
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/error
+                cp lines.html.json outs/$ldate/error
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/error s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/error
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/error/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    lambda_throttles:
+        name: lambda_throttles
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/throttles
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP }} > outs/trickle_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_ASYNC }} > outs/trickle_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_APP }} > outs/socket_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_SEND }} > outs/socket_send.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_APP }} > outs/baas_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t Throttles
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/throttles
+                cp lines.html.json outs/$ldate/throttles
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/throttles s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/throttles
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/throttles/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    lambda_duration:
+        name: lambda_duration
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/duration
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP }} > outs/trickle_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_ASYNC }} > outs/trickle_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_APP }} > outs/socket_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_SEND }} > outs/socket_send.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_APP }} > outs/baas_app.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t Duration
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/duration
+                cp lines.html.json outs/$ldate/duration
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/duration s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/duration
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/duration/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
     send-trickle:
         name: send-trickle
         runs-on: ubuntu-latest
-        needs: [lambda_invocation,lambda_concurrent]
+        needs: [lambda_invocation,lambda_concurrent,lambda_error,lambda_throttles,lambda_duration]
         steps:
             # Get last day
             - name: Get last day
@@ -244,4 +529,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"h2","value":"AWS Lambda Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_invocation.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_concurrent.outputs.reportUrl }}"}]'
+                blockData: '[{"type":"h2","value":"AWS Lambda Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_invocation.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_concurrent.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_error.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_throttles.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_duration.outputs.reportUrl }}"}]'
