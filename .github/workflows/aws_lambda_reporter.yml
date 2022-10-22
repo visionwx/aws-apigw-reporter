@@ -116,15 +116,15 @@ jobs:
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t Invocations
                 cp outs.json lines_with_pie.html.json
-                cp lines_with_pie.html out/$ldate/invocations
-                cp lines_with_pie.html.json out/$ldate/invocations
+                cp lines_with_pie.html outs/$ldate/invocations
+                cp lines_with_pie.html.json outs/$ldate/invocations
             
             # Upload report
             - name: Upload report
               id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync out/$ldate/invocations s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/invocations
+                aws s3 sync outs/$ldate/invocations s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/invocations
                 reportUrl=https://devres.trickle.so/miniapps/$ldate/invocations/lines_with_pie.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
@@ -211,15 +211,15 @@ jobs:
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t ConcurrentExecutions
                 cp outs.json lines.html.json
-                cp lines.html out/$ldate/concurrent
-                cp lines.html.json out/$ldate/concurrent
+                cp lines.html outs/$ldate/concurrent
+                cp lines.html.json outs/$ldate/concurrent
             
             # Upload report
             - name: Upload report
               id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync out/$ldate/concurrent s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/concurrent
+                aws s3 sync outs/$ldate/concurrent s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/concurrent
                 reportUrl=https://devres.trickle.so/miniapps/$ldate/concurrent/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
