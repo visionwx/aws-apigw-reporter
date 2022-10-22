@@ -449,7 +449,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name Duration \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -457,7 +457,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name Duration \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -465,7 +465,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name Duration \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -473,7 +473,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name Duration \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -481,7 +481,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name Duration \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -489,7 +489,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name Duration \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -529,4 +529,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"h2","value":"AWS Lambda Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_invocation.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_concurrent.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_error.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_throttles.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_duration.outputs.reportUrl }}"}]'
+                blockData: '[{"type":"h2","value":"AWS Lambda Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_invocation.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_concurrent.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_duration.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_error.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.lambda_throttles.outputs.reportUrl }}"}]'

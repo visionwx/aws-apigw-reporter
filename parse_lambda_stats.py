@@ -56,7 +56,7 @@ def convertDataPointsToDict(dataPoints):
         if "Timestamp" not in perPoint.keys() or "Sum" not in perPoint.keys():
             raise Exception("DataPoint format error")
         ts = perPoint["Timestamp"].split("T")[1].replace("+00:00","")
-        value = perPoint["Sum"]
+        value = int(perPoint["Sum"])
         out[ts] = value
     return out
 
