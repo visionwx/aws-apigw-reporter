@@ -49,13 +49,13 @@ jobs:
             #     echo "::set-output name=blockDataJson::$content"
 
             # Send trickle
-            - name: Send trickle comment
-              uses: visionwx/trickle-sender@v1.0.4
-              with:
-                trickleToken: ${{ secrets.trickleToken }}
-                workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
-                memberId: ${{ env.TRICKLE_MEMBER_ID }}
-                channelId: ${{ env.TRICKLE_CHANNEL_ID }}
-                trickleId: ${{ env.DEV_TRICKLE_ID }}
-                blockType: comment
-                blockData: '[{"type":"text","value":"--> Hello all, DEV Env Updated, from ${{ github.event.pull_request.head.ref }} into ${{ github.event.pull_request.base.ref }}, trigger by ${{ github.event.sender.login }}"}]'
+            # - name: Send trickle comment
+            #   uses: visionwx/trickle-sender@v1.0.4
+            #   with:
+            #     trickleToken: ${{ secrets.trickleToken }}
+            #     workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
+            #     memberId: ${{ env.TRICKLE_MEMBER_ID }}
+            #     channelId: ${{ env.TRICKLE_CHANNEL_ID }}
+            #     trickleId: ${{ env.DEV_TRICKLE_ID }}
+            #     blockType: comment
+            #     blockData: '[{"type":"text","value":"--> Hello all, DEV Env Updated, from ${{ github.event.pull_request.head.ref }} into ${{ github.event.pull_request.base.ref }}, trigger by ${{ github.event.sender.login }}"}]'
