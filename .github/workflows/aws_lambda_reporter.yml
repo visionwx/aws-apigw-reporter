@@ -494,7 +494,7 @@ jobs:
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t Duration
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumDuration -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/duration
                 cp lines.html.json outs/$ldate/duration
