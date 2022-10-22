@@ -1,4 +1,4 @@
-name: Testing AWS
+name: AWS_APIGW_REPORTER
 
 on:
     workflow_dispatch:
