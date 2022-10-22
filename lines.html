@@ -7,8 +7,8 @@
 <head>
   <meta charset="utf-8">
 </head>
-<body style="height: 100%; margin: 0">
-  <div id="container" style="height: 100%"></div>
+<body style="height: 100%; margin: 0;">
+  <div id="container" style="height: 100%;"></div>
 
   <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/jquery"></script>
   <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
@@ -24,37 +24,40 @@
     var isFullscreen = false;
 
     myChart.showLoading();
-    $.get(document.location.href + '.json', function (rpsData) {
+    dataPath = document.location.protocol + "//" + document.location.host + document.location.pathname + ".json" + document.location.search;
+    $.get(dataPath, function (data) {
         myChart.hideLoading();
-        const dateList = rpsData.data.map(function (item) {
-            return item[0].split(" ")[1].replace(":00.000","");
-        });
-        const valueList = rpsData.data.map(function (item) {
-            return item[1];
-        });
+        
         option = {
+            dataset: {
+                source: data.source
+            },
             // Make gradient line here
-            visualMap: [
-                {
-                    show: false,
-                    type: 'continuous',
-                    seriesIndex: 0,
-                    min: 0,
-                    max: 400
-                },
-            ],
+            // visualMap: [
+            //     {
+            //         show: false,
+            //         type: 'continuous',
+            //         seriesIndex: 1,
+            //         min: 0,
+            //         max: 400
+            //     }
+            // ],
             title: [
                 {
                     // left: 'center',
-                    text: 'Requests per 15m',
+                    text: data.title,
                     textStyle: {
                         fontStyle: "italic",
                         fontWeight: "bold",
                         fontSize: 24,
                     },
                     textAlign: 'left'
+                    
                 },
             ],
+            tooltip: {
+                trigger: 'axis'
+            },
             toolbox: {
                 show: true,
                 feature: {
@@ -102,32 +105,60 @@
                     }
                 }
             },
-            tooltip: {
-                trigger: 'axis'
+            legend: {
+                right: '5%',
+                top: '20%',
+                orient: 'vertical'
             },
             xAxis: [
                 {
-                    name: "Time",
-                    data: dateList
+                    type: "category"
                 },
             ],
-            yAxis: [
-                {
-                    name: "Requests"
-                },
-            ],
-            grid: [
-                {
-                    bottom: '10%'
-                },
-            ],
+            yAxis: {
+                gridIndex: 0
+            },
+            grid: { 
+                top: '20%',
+                bottom: '10%'
+            },
             series: [
                 {
                     type: 'line',
                     showSymbol: false,
-                    data: valueList,
-                    name: rpsData.startDate.split(" ")[0]
+                    smooth: true,
+                    seriesLayoutBy: 'row'
                 },
+                {
+                    type: 'line',
+                    showSymbol: false,
+                    smooth: true,
+                    seriesLayoutBy: 'row'
+                },
+                {
+                    type: 'line',
+                    showSymbol: false,
+                    smooth: true,
+                    seriesLayoutBy: 'row'
+                },
+                {
+                    type: 'line',
+                    showSymbol: false,
+                    smooth: true,
+                    seriesLayoutBy: 'row'
+                },
+                {
+                    type: 'line',
+                    showSymbol: false,
+                    smooth: true,
+                    seriesLayoutBy: 'row'
+                },
+                {
+                    type: 'line',
+                    showSymbol: false,
+                    smooth: true,
+                    seriesLayoutBy: 'row'
+                }
             ]
         };
         myChart.setOption(option);
