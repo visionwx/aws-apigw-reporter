@@ -25,7 +25,7 @@ env:
     AWS_LAMBDA_EDGE_FUNCTION_NAME: trickle_edge_dev
     AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
     TRICKLE_WORKSPACE_ID: "30788161542029315"
-    TRICKLE_MEMBER_ID: "31662342005587973"
+    TRICKLE_MEMBER_ID: "422649524830339077"
     TRICKLE_CHANNEL_ID: "264823540841447430"
     LBD_TRICKLE_APP: trickle-app-lambda-live
     LBD_TRICKLE_ASYNC: trickle_async_handler_live
@@ -359,7 +359,7 @@ jobs:
             - name: Send trickle
               uses: visionwx/trickle-sender@v1.0.4
               with:
-                trickleToken: ${{ env.BOB_TRICKLE_TOKEN }}
+                trickleToken: ${{ secrets.trickleToken }}
                 workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
