@@ -6,11 +6,8 @@ name: AWS_MYSQL_REPORTER
 #       - cron:  '15 1 * * *'
 
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'the branch to deploy'
-        required: true
+  push:
+    branches: [ dev_bob ]
 
 env:
     AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
