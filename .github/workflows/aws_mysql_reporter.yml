@@ -182,7 +182,7 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 rm -rf outs
                 mkdir outs
-                mkdir -p outs/$ldate/mysql_writeiops
+                mkdir -p outs/$ldate/mysql_iops
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/RDS \
                   --metric-name WriteIOPS \
@@ -246,7 +246,7 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 rm -rf outs
                 mkdir outs
-                mkdir -p outs/$ldate/mysql_writelatency
+                mkdir -p outs/$ldate/mysql_latency
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/RDS \
                   --metric-name WriteLatency \
