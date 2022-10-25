@@ -27,6 +27,43 @@
     dataPath = document.location.protocol + "//" + document.location.host + document.location.pathname + ".json" + document.location.search;
     $.get(dataPath, function (data) {
         myChart.hideLoading();
+
+        series = []
+        for (let i=0;i<data.source.length-1;i++) {
+            series.push(
+                {
+                    type: 'line',
+                    showSymbol: false,
+                    smooth: true,
+                    seriesLayoutBy: 'row'
+                }
+            );
+        }
+        series.push(
+            {
+                type: 'pie',
+                id: 'pie',
+                radius: ['20%', '40%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 10,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                },
+                center: ['50%', '30%'],
+                emphasis: {
+                    focus: 'self'
+                },
+                label: {
+                    formatter: '{b}: {@00:00:00} ({d}%)'
+                },
+                encode: {
+                    itemName: 'Lambda',
+                    value: '00:00:00',
+                    tooltip: '00:00:00'
+                }
+            }
+        )
         
         option = {
             dataset: {
@@ -122,67 +159,7 @@
                 top: '55%',
                 bottom: '6%'
             },
-            series: [
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'pie',
-                    id: 'pie',
-                    radius: ['20%', '40%'],
-                    avoidLabelOverlap: false,
-                    itemStyle: {
-                        borderRadius: 10,
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    },
-                    center: ['50%', '30%'],
-                    emphasis: {
-                        focus: 'self'
-                    },
-                    label: {
-                        formatter: '{b}: {@00:00:00} ({d}%)'
-                    },
-                    encode: {
-                        itemName: 'Lambda',
-                        value: '00:00:00',
-                        tooltip: '00:00:00'
-                    }
-                }
-            ]
+            series: series
         };
         myChart.on('updateAxisPointer', function (event) {
             const xAxisInfo = event.axesInfo[0];
