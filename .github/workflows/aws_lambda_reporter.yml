@@ -164,7 +164,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name ConcurrentExecutions \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -172,7 +172,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name ConcurrentExecutions \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -180,7 +180,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name ConcurrentExecutions \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -188,7 +188,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name ConcurrentExecutions \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -196,7 +196,7 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name ConcurrentExecutions \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
@@ -204,12 +204,12 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name ConcurrentExecutions \
-                  --statistics Sum \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t ConcurrentExecutions
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumConcurrentExecutions -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/concurrent
                 cp lines.html.json outs/$ldate/concurrent
