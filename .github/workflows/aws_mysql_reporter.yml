@@ -359,7 +359,7 @@ jobs:
             - name: Send trickle
               uses: visionwx/trickle-sender@v1.0.4
               with:
-                trickleToken: ${{ env.tricklBOB_TRICKLE_TOKEN }}
+                trickleToken: ${{ env.BOB_TRICKLE_TOKEN }}
                 workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
