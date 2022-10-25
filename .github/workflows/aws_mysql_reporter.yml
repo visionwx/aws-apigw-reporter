@@ -1,0 +1,369 @@
+name: AWS_MYSQL_REPORTER
+
+# on:
+#     workflow_dispatch:
+#     schedule:
+#       - cron:  '15 1 * * *'
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'the branch to deploy'
+        required: true
+
+env:
+    AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
+    AWS_S3_KEY_SECRET: ${{ secrets.AWS_S3_KEY_SECRET }}
+    AWS_S3_BUCKET_NAME: boom2-resource
+    AWS_S3_COMPONENT_BUCKET_NAME: trickle-component
+    AWS_S3_REGION: us-east-1
+    AWS_CLOUD_FRONT_DISTRIBUTION_ID: E28OIAI99C3YGA
+    AWS_DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_KEY }}
+    AWS_DEPLOY_SECRET: ${{ secrets.AWS_DEPLOY_SECRET }}
+    AWS_LAMBDA_FUNCTION_NAME: trickle_ssr_dev
+    ECR_REGISTRY: 257417524232.dkr.ecr.us-east-1.amazonaws.com
+    IMAGE_NAME: trickle-ssr
+    AWS_DEFAULT_REGION: us-east-1
+    AWS_LAMBDA_EDGE_FUNCTION_NAME: trickle_edge_dev
+    AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
+    TRICKLE_WORKSPACE_ID: "30788161542029315"
+    TRICKLE_MEMBER_ID: "31662342005587973"
+    TRICKLE_CHANNEL_ID: "264823540841447430"
+    LBD_TRICKLE_APP: trickle-app-lambda-live
+    LBD_TRICKLE_ASYNC: trickle_async_handler_live
+    LBD_SOCKET_APP: socket_service_live
+    LBD_SOCKET_SEND: SEND_SOCKET_MESSAGE_LIVE
+    LBD_BAAS_APP: baas-vc-async-handler-live
+    LBD_BAAS_ASYNC: baas-vc-app-handler-live
+    LBD_PERIOD: 900
+    MYSQL_NAME: trickle
+
+jobs:
+
+    mysql_connections:
+        name: mysql_connections
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/mysql_connections
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name DatabaseConnections \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_connections.json
+
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumConnections -m Maximum
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/mysql_connections
+                cp lines.html.json outs/$ldate/mysql_connections
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/mysql_connections s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_connections
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_connections/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    mysql_cpu:
+        name: mysql_cpu
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/mysql_cpu
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name CPUUtilization \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_cpu.json
+
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumCPUUtilization -m Maximum
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/mysql_cpu
+                cp lines.html.json outs/$ldate/mysql_cpu
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/mysql_cpu s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_cpu
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_cpu/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    mysql_iops:
+        name: mysql_iops
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/mysql_writeiops
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name WriteIOPS \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_writeiops.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name ReadIOPS \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readiops.json
+                
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadIOPS -m Average
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/mysql_iops
+                cp lines.html.json outs/$ldate/mysql_iops
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/mysql_iops s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_iops
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_iops/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    mysql_latency:
+        name: mysql_latency
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/mysql_writelatency
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name WriteLatency \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_writelatency.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name ReadLatency \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readlatency.json
+                
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadLatency -m Average
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/mysql_latency
+                cp lines.html.json outs/$ldate/mysql_latency
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/mysql_latency s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_latency
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_latency/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    mysql_storage:
+        name: mysql_storage
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/mysql_storage
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name FreeStorageSpace \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freestorage.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/RDS \
+                  --metric-name FreeableMemory \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freememory.json
+                
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MemoryStorageUsage -m Average
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/mysql_storage
+                cp lines.html.json outs/$ldate/mysql_storage
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/mysql_storage s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_storage
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_storage/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    send-trickle:
+        name: send-trickle
+        runs-on: ubuntu-latest
+        needs: [mysql_connections,mysql_cpu,mysql_iops,mysql_latency,mysql_storage]
+        steps:
+            # Get last day
+            - name: Get last day
+              id: getdate
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                echo "::set-output name=ldate::$ldate"
+
+            # Send trickle
+            - name: Send trickle
+              uses: visionwx/trickle-sender@v1.0.4
+              with:
+                trickleToken: ${{ secrets.trickleToken }}
+                workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
+                memberId: ${{ env.TRICKLE_MEMBER_ID }}
+                channelId: ${{ env.TRICKLE_CHANNEL_ID }}
+                blockType: trickle
+                blockData: '[{"type":"h2","value":"AWS MySQL Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_connections.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_iops.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_latency.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_storage.outputs.reportUrl }}"}]'
