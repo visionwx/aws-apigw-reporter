@@ -80,7 +80,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_connections.json
 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumConnections(Counts) -m Maximum
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'MaximumConnections(Counts)' -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_connections
                 cp lines.html.json outs/$ldate/mysql_connections
@@ -136,7 +136,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_cpu.json
 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumCPUUtilization(Percent) -m Maximum
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'MaximumCPUUtilization(Percent)' -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_cpu
                 cp lines.html.json outs/$ldate/mysql_cpu
@@ -200,7 +200,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readiops.json
                 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadIOPS(Count/Second) -m Average
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'WriteReadIOPS(Count/Second)' -m Average
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_iops
                 cp lines.html.json outs/$ldate/mysql_iops
@@ -264,7 +264,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readlatency.json
                 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadLatency(Milliseconds) -m Average
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'WriteReadLatency(Milliseconds)' -m Average
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_latency
                 cp lines.html.json outs/$ldate/mysql_latency
