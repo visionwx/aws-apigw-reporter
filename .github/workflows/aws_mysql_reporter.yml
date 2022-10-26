@@ -26,7 +26,7 @@ env:
     AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
     TRICKLE_WORKSPACE_ID: "30788161542029315"
     TRICKLE_MEMBER_ID: "422649524830339077"
-    TRICKLE_CHANNEL_ID: "264823540841447430"
+    TRICKLE_CHANNEL_ID: "614087579146387462"
     LBD_TRICKLE_APP: trickle-app-lambda-live
     LBD_TRICKLE_ASYNC: trickle_async_handler_live
     LBD_SOCKET_APP: socket_service_live
@@ -35,7 +35,6 @@ env:
     LBD_BAAS_ASYNC: baas-vc-app-handler-live
     LBD_PERIOD: 900
     MYSQL_NAME: trickle
-    BOB_TRICKLE_TOKEN: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzMTY2MTI0MjQ5Mzk2MDE5MyIsImlhdCI6MTY2NDMyODQzMCwiZXhwIjoxNjk1ODY0NDMwLCJzY29wZSI6ImJyb3dzZXIifQ.dPI3fNle4dozmHYfBKf3PUufMZupDflU2qEW6fMErS0"
 
 jobs:
 
@@ -81,7 +80,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_connections.json
 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumConnections -m Maximum
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumConnections(Counts) -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_connections
                 cp lines.html.json outs/$ldate/mysql_connections
@@ -137,7 +136,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_cpu.json
 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumCPUUtilization -m Maximum
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MaximumCPUUtilization(Percent) -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_cpu
                 cp lines.html.json outs/$ldate/mysql_cpu
@@ -201,7 +200,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readiops.json
                 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadIOPS -m Average
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadIOPS(Count/Second) -m Average
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_iops
                 cp lines.html.json outs/$ldate/mysql_iops
@@ -265,7 +264,7 @@ jobs:
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readlatency.json
                 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadLatency -m Average
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t WriteReadLatency(Milliseconds) -m Average
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/mysql_latency
                 cp lines.html.json outs/$ldate/mysql_latency
@@ -279,74 +278,74 @@ jobs:
                 reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_latency/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
-    mysql_storage:
-        name: mysql_storage
-        runs-on: ubuntu-latest
-        outputs:
-          reportUrl: ${{ steps.upload.outputs.reportUrl }}
-        steps:
-            # Pull Code
-            - name: Pull repo
-              uses: actions/checkout@v2
+    # mysql_storage:
+    #     name: mysql_storage
+    #     runs-on: ubuntu-latest
+    #     outputs:
+    #       reportUrl: ${{ steps.upload.outputs.reportUrl }}
+    #     steps:
+    #         # Pull Code
+    #         - name: Pull repo
+    #           uses: actions/checkout@v2
 
-            # Configure AWS S3
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
-                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
-                  aws-region: ${{ env.AWS_S3_REGION }}
+    #         # Configure AWS S3
+    #         - name: Configure AWS credentials
+    #           uses: aws-actions/configure-aws-credentials@v1
+    #           with:
+    #               aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+    #               aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+    #               aws-region: ${{ env.AWS_S3_REGION }}
             
-            # Get last day
-            - name: Get last day
-              id: get-date
-              run: |
-                date -d "1 day ago" +"%Y-%m-%d"
+    #         # Get last day
+    #         - name: Get last day
+    #           id: get-date
+    #           run: |
+    #             date -d "1 day ago" +"%Y-%m-%d"
 
-            # Send Query Request
-            - name: Send query reuqest
-              id: query
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                cdate=`date +"%Y-%m-%d"`
-                rm -rf outs
-                mkdir outs
-                mkdir -p outs/$ldate/mysql_storage
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name FreeStorageSpace \
-                  --statistics Average \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freestorage.json
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name FreeableMemory \
-                  --statistics Average \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freememory.json
+    #         # Send Query Request
+    #         - name: Send query reuqest
+    #           id: query
+    #           run: |
+    #             ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+    #             cdate=`date +"%Y-%m-%d"`
+    #             rm -rf outs
+    #             mkdir outs
+    #             mkdir -p outs/$ldate/mysql_storage
+    #             aws cloudwatch get-metric-statistics \
+    #               --namespace AWS/RDS \
+    #               --metric-name FreeStorageSpace \
+    #               --statistics Average \
+    #               --start-time ${ldate}T00:00:00 \
+    #               --end-time ${cdate}T00:00:00 \
+    #               --period ${{ env.LBD_PERIOD }} \
+    #               --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freestorage.json
+    #             aws cloudwatch get-metric-statistics \
+    #               --namespace AWS/RDS \
+    #               --metric-name FreeableMemory \
+    #               --statistics Average \
+    #               --start-time ${ldate}T00:00:00 \
+    #               --end-time ${cdate}T00:00:00 \
+    #               --period ${{ env.LBD_PERIOD }} \
+    #               --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freememory.json
                 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MemoryStorageUsage -m Average
-                cp outs.json lines.html.json
-                cp lines.html outs/$ldate/mysql_storage
-                cp lines.html.json outs/$ldate/mysql_storage
+    #             python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t MemoryStorageUsage -m Average
+    #             cp outs.json lines.html.json
+    #             cp lines.html outs/$ldate/mysql_storage
+    #             cp lines.html.json outs/$ldate/mysql_storage
             
-            # Upload report
-            - name: Upload report
-              id: upload
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/mysql_storage s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_storage
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_storage/lines.html
-                echo "::set-output name=reportUrl::$reportUrl"
+    #         # Upload report
+    #         - name: Upload report
+    #           id: upload
+    #           run: |
+    #             ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+    #             aws s3 sync outs/$ldate/mysql_storage s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_storage
+    #             reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_storage/lines.html
+    #             echo "::set-output name=reportUrl::$reportUrl"
 
     send-trickle:
         name: send-trickle
         runs-on: ubuntu-latest
-        needs: [mysql_connections,mysql_cpu,mysql_iops,mysql_latency,mysql_storage]
+        needs: [mysql_connections,mysql_cpu,mysql_iops,mysql_latency]
         steps:
             # Get last day
             - name: Get last day
@@ -364,4 +363,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"h2","value":"AWS MySQL Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_connections.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_iops.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_latency.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_storage.outputs.reportUrl }}"}]'
+                blockData: '[{"type":"h2","value":"AWS MySQL Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_connections.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_iops.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_latency.outputs.reportUrl }}"},{"type":"text","value":""}]'
