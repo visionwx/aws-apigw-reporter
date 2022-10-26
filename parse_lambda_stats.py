@@ -36,6 +36,8 @@ def parseArgs():
         type=str, default="Sum", help="metric name, by default Sum")
     ap.add_argument("-p", "--period", required=False, 
         type=int, default=900, help="statices period in seconds, by default 900s,15min")
+    ap.add_argument("-mf", "--multiplyFactor", required=False, 
+        type=float, default=1.0, help="multiply factor")
     args = vars(ap.parse_args())
     return args
 
@@ -52,13 +54,13 @@ def checkData(data):
 #     "Sum": 93.0,
 #     "Unit": "Count"
 # }
-def convertDataPointsToDict(dataPoints, metricName):
+def convertDataPointsToDict(dataPoints, metricName, multiplyFactor=1.0):
     out = {}
     for perPoint in dataPoints:
         if "Timestamp" not in perPoint.keys() or metricName not in perPoint.keys():
             raise Exception("DataPoint format error")
         ts = perPoint["Timestamp"].split("T")[1].replace("+00:00","")
-        value = int(perPoint[metricName])
+        value = int(perPoint[metricName] * multiplyFactor)
         out[ts] = value
     return out
 
@@ -101,7 +103,7 @@ def main():
         checkData(data)
 
         # convert datapoint
-        dataPoints = convertDataPointsToDict(data["Datapoints"], args["metricName"])
+        dataPoints = convertDataPointsToDict(data["Datapoints"], args["metricName"], args["multiplyFactor"])
         print(dataPoints)
 
         # transform data
