@@ -27,6 +27,18 @@
     dataPath = document.location.protocol + "//" + document.location.host + document.location.pathname + ".json" + document.location.search;
     $.get(dataPath, function (data) {
         myChart.hideLoading();
+
+        series = []
+        for (let i=0;i<data.source.length-1;i++) {
+            series.push(
+                {
+                    type: 'line',
+                    showSymbol: false,
+                    smooth: true,
+                    seriesLayoutBy: 'row'
+                }
+            );
+        }
         
         option = {
             dataset: {
@@ -122,44 +134,7 @@
                 top: '20%',
                 bottom: '10%'
             },
-            series: [
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                },
-                {
-                    type: 'line',
-                    showSymbol: false,
-                    smooth: true,
-                    seriesLayoutBy: 'row'
-                }
-            ]
+            series: series
         };
         myChart.setOption(option);
     });
