@@ -322,7 +322,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \ 
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=VERSION-CONTROL-LIVE.fifo > outs/VERSION_AgeOfOldestMess.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -339,6 +339,7 @@ jobs:
                 cp lines.html.json outs/$ldate/version_sqs_stat
 
 
+
             # Upload report
             - name: Upload report
               id: upload
@@ -347,6 +348,7 @@ jobs:
                 aws s3 sync outs/$ldate/version_sqs_stat s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/version_sqs_stat
                 reportUrl=https://devres.trickle.so/miniapps/$ldate/version_sqs_stat/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
+
 
     send-trickle:
         name: send-trickle
