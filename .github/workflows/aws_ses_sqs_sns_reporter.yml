@@ -1,13 +1,13 @@
 name: AWS_SES_SQS_REPORTER
 
-# on:
-#     workflow_dispatch:
-#     schedule:
-#       - cron:  '25 1 * * *'
-
 on:
-  push:
-    branches: [ dev_bob ]
+    workflow_dispatch:
+    schedule:
+      - cron:  '25 1 * * *'
+
+# on:
+#   push:
+#     branches: [ dev_bob ]
 
 env:
     AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}

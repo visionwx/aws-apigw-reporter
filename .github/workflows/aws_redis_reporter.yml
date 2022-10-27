@@ -1,13 +1,13 @@
-name: AWS_MYSQL_REPORTER
-
-on:
-    workflow_dispatch:
-    schedule:
-      - cron:  '20 1 * * *'
+name: AWS_REDIS_REPORTER
 
 # on:
-#   push:
-#     branches: [ dev_bob ]
+#     workflow_dispatch:
+#     schedule:
+#       - cron:  '20 1 * * *'
+
+on:
+  push:
+    branches: [ dev_bob ]
 
 env:
     AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
@@ -38,8 +38,8 @@ env:
 
 jobs:
 
-    mysql_connections:
-        name: mysql_connections
+    redis_curconnections:
+        name: redis_curconnections
         runs-on: ubuntu-latest
         outputs:
           reportUrl: ${{ steps.upload.outputs.reportUrl }}
@@ -70,32 +70,39 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 rm -rf outs
                 mkdir outs
-                mkdir -p outs/$ldate/mysql_connections
+                mkdir -p outs/$ldate/redis_curconnections
                 aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name DatabaseConnections \
+                  --namespace AWS/ElastiCache \
+                  --metric-name CurrConnections \
                   --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_connections.json
-
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-001 > outs/kvstore_01_connections.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/ElastiCache \
+                  --metric-name CurrConnections \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-002 > outs/kvstore_02_connections.json
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'MaximumConnections(Counts)' -m Maximum
                 cp outs.json lines.html.json
-                cp lines.html outs/$ldate/mysql_connections
-                cp lines.html.json outs/$ldate/mysql_connections
+                cp lines.html outs/$ldate/redis_curconnections
+                cp lines.html.json outs/$ldate/redis_curconnections
             
             # Upload report
             - name: Upload report
               id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/mysql_connections s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_connections
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_connections/lines.html
+                aws s3 sync outs/$ldate/redis_curconnections s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/redis_curconnections
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/redis_curconnections/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
-    mysql_cpu:
-        name: mysql_cpu
+    redis_cacherate:
+        name: redis_cacherate
         runs-on: ubuntu-latest
         outputs:
           reportUrl: ${{ steps.upload.outputs.reportUrl }}
@@ -126,32 +133,102 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 rm -rf outs
                 mkdir outs
-                mkdir -p outs/$ldate/mysql_cpu
+                mkdir -p outs/$ldate/redis_cacherate
                 aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
+                  --namespace AWS/ElastiCache \
+                  --metric-name CacheHitRate \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-001 > outs/kvstore_01_cacheHitRate.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/ElastiCache \
+                  --metric-name CacheHitRate \
+                  --statistics Average \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-002 > outs/kvstore_02_cacheHitRate.json
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'CacheHiteRate(Percent)' -m Average
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/redis_cacherate
+                cp lines.html.json outs/$ldate/redis_cacherate
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/redis_cacherate s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/redis_cacherate
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/redis_cacherate/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    redis_cpu:
+        name: redis_cpu
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/redis_cpu
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/ElastiCache \
                   --metric-name CPUUtilization \
                   --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_cpu.json
-
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'MaximumCPUUtilization(Percent)' -m Maximum
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-001 > outs/kvstore_01_cpu.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/ElastiCache \
+                  --metric-name CPUUtilization \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-002 > outs/kvstore_02_cacheHitRate.json
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'CacheHiteRate(Percent)' -m Maximum
                 cp outs.json lines.html.json
-                cp lines.html outs/$ldate/mysql_cpu
-                cp lines.html.json outs/$ldate/mysql_cpu
+                cp lines.html outs/$ldate/redis_cpu
+                cp lines.html.json outs/$ldate/redis_cpu
             
             # Upload report
             - name: Upload report
               id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/mysql_cpu s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_cpu
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_cpu/lines.html
+                aws s3 sync outs/$ldate/redis_cpu s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/redis_cpu
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/redis_cpu/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
-    mysql_iops:
-        name: mysql_iops
+    redis_memory:
+        name: redis_memory
         runs-on: ubuntu-latest
         outputs:
           reportUrl: ${{ steps.upload.outputs.reportUrl }}
@@ -182,40 +259,39 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 rm -rf outs
                 mkdir outs
-                mkdir -p outs/$ldate/mysql_iops
+                mkdir -p outs/$ldate/redis_memory
                 aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name WriteIOPS \
-                  --statistics Average \
+                  --namespace AWS/ElastiCache \
+                  --metric-name DatabaseMemoryUsagePercentage \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_writeiops.json
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-001 > outs/kvstore_01_memoryUage.json
                 aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name ReadIOPS \
-                  --statistics Average \
+                  --namespace AWS/ElastiCache \
+                  --metric-name DatabaseMemoryUsagePercentage \
+                  --statistics Maximum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readiops.json
-                
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'WriteReadIOPS(Count/Second)' -m Average
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-002 > outs/kvstore_02_memoryUage.json
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'MemoryUsage(Percent)' -m Maximum
                 cp outs.json lines.html.json
-                cp lines.html outs/$ldate/mysql_iops
-                cp lines.html.json outs/$ldate/mysql_iops
+                cp lines.html outs/$ldate/redis_memory
+                cp lines.html.json outs/$ldate/redis_memory
             
             # Upload report
             - name: Upload report
               id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/mysql_iops s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_iops
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_iops/lines.html
+                aws s3 sync outs/$ldate/redis_memory s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/redis_memory
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/redis_memory/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
-    mysql_latency:
-        name: mysql_latency
+    redis_traffic:
+        name: redis_traffic
         runs-on: ubuntu-latest
         outputs:
           reportUrl: ${{ steps.upload.outputs.reportUrl }}
@@ -246,106 +322,58 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 rm -rf outs
                 mkdir outs
-                mkdir -p outs/$ldate/mysql_latency
+                mkdir -p outs/$ldate/redis_traffic
+
                 aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name WriteLatency \
-                  --statistics Average \
+                  --namespace AWS/ElastiCache \
+                  --metric-name NetworkBytesIn \
+                  --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_writelatency.json
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-001 > outs/kvstore_01_trafficIn.json
                 aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name ReadLatency \
-                  --statistics Average \
+                  --namespace AWS/ElastiCache \
+                  --metric-name NetworkBytesIn \
+                  --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_readlatency.json
-                
-                python3 parse_lambda_stats.py -mf 1000 -f outs -p ${{ env.LBD_PERIOD }} -t 'WriteReadLatency(MilliSeconds)' -m Average
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-002 > outs/kvstore_02_trafficIn.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/ElastiCache \
+                  --metric-name NetworkBytesOut \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-001 > outs/kvstore_01_trafficOut.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/ElastiCache \
+                  --metric-name NetworkBytesOut \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=CacheClusterId,Value=trickle-kv-store-002 > outs/kvstore_02_trafficOut.json                  
+                python3 parse_lambda_stats.py -mf 0.000001 -f outs -p ${{ env.LBD_PERIOD }} -t 'TrafficStats(MB)' -m Sum
                 cp outs.json lines.html.json
-                cp lines.html outs/$ldate/mysql_latency
-                cp lines.html.json outs/$ldate/mysql_latency
+                cp lines.html outs/$ldate/redis_traffic
+                cp lines.html.json outs/$ldate/redis_traffic
             
             # Upload report
             - name: Upload report
               id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/mysql_latency s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_latency
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_latency/lines.html
-                echo "::set-output name=reportUrl::$reportUrl"
-
-    mysql_storage:
-        name: mysql_storage
-        runs-on: ubuntu-latest
-        outputs:
-          reportUrl: ${{ steps.upload.outputs.reportUrl }}
-        steps:
-            # Pull Code
-            - name: Pull repo
-              uses: actions/checkout@v2
-
-            # Configure AWS S3
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
-                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
-                  aws-region: ${{ env.AWS_S3_REGION }}
-            
-            # Get last day
-            - name: Get last day
-              id: get-date
-              run: |
-                date -d "1 day ago" +"%Y-%m-%d"
-
-            # Send Query Request
-            - name: Send query reuqest
-              id: query
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                cdate=`date +"%Y-%m-%d"`
-                rm -rf outs
-                mkdir outs
-                mkdir -p outs/$ldate/mysql_storage
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name FreeStorageSpace \
-                  --statistics Average \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freestorage.json
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/RDS \
-                  --metric-name FreeableMemory \
-                  --statistics Average \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=DBInstanceIdentifier,Value=${{ env.MYSQL_NAME }} > outs/mysql_freememory.json
-                
-                python3 parse_lambda_stats.py -mf 0.000001 -f outs -p ${{ env.LBD_PERIOD }} -t 'MemoryStorageUsage(MB)' -m Average
-                cp outs.json lines.html.json
-                cp lines.html outs/$ldate/mysql_storage
-                cp lines.html.json outs/$ldate/mysql_storage
-            
-            # Upload report
-            - name: Upload report
-              id: upload
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/mysql_storage s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/mysql_storage
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/mysql_storage/lines.html
+                aws s3 sync outs/$ldate/redis_traffic s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/redis_traffic
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/redis_traffic/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
     send-trickle:
         name: send-trickle
         runs-on: ubuntu-latest
-        needs: [mysql_connections,mysql_cpu,mysql_iops,mysql_latency]
+        needs: [redis_curconnections,redis_cacherate,redis_cpu,redis_memory,redis_traffic]
         steps:
             # Get last day
             - name: Get last day
@@ -363,4 +391,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"h2","value":"AWS MySQL Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_connections.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_iops.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_latency.outputs.reportUrl }}"},{"type":"text","value":""}]'
+                blockData: '[{"type":"h2","value":"AWS Rdis Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.redis_curconnections.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.redis_cacherate.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.redis_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.redis_memory.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.redis_traffic.outputs.reportUrl }}"}]'
