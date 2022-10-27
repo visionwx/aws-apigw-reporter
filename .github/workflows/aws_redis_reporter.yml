@@ -345,7 +345,7 @@ jobs:
     send-trickle:
         name: send-trickle
         runs-on: ubuntu-latest
-        needs: [mysql_connections,mysql_cpu,mysql_iops,mysql_latency,mysql_storage]
+        needs: [mysql_connections,mysql_cpu,mysql_iops,mysql_latency]
         steps:
             # Get last day
             - name: Get last day
@@ -363,4 +363,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"h2","value":"AWS MySQL Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_connections.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_iops.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_latency.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_storage.outputs.reportUrl }}"}]'
+                blockData: '[{"type":"h2","value":"AWS MySQL Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_connections.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_iops.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.mysql_latency.outputs.reportUrl }}"},{"type":"text","value":""}]'
