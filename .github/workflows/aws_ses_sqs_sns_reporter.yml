@@ -306,7 +306,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  \
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=VERSION-CONTROL-LIVE.fifo > outs/VERSION_MessReceived.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -322,7 +322,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }} \ 
                   --dimensions Name=QueueName,Value=VERSION-CONTROL-LIVE.fifo > outs/VERSION_AgeOfOldestMess.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -330,7 +330,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  \
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=VERSION-CONTROL-LIVE.fifo > outs/VERSION_MessDeleted.json
                                               
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'VersionSqsStats(Counts)' -m Sum
