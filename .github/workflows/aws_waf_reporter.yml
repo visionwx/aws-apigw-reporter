@@ -1,13 +1,13 @@
 name: AWS_WAF_REPORTER
 
-# on:
-#     workflow_dispatch:
-#     schedule:
-#       - cron:  '20 1 * * *'
-
 on:
-  push:
-    branches: [ dev_bob ]
+    workflow_dispatch:
+    schedule:
+      - cron:  '20 1 * * *'
+
+# on:
+#   push:
+#     branches: [ dev_bob ]
 
 env:
     AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}

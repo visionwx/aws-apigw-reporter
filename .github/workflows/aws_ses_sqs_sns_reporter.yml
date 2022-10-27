@@ -148,7 +148,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=TRICKLE > outs/TRICKLE_MessSent.json                
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -156,7 +156,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=TRICKLE > outs/TRICKLE_AgeOfOldestMess.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -223,7 +223,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  \
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=PUSH_WEBSOCKET_MESSAGE_LIVE.fifo > outs/SOCKET_MessReceived.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -239,7 +239,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  \
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=PUSH_WEBSOCKET_MESSAGE_LIVE.fifo > outs/SOCKET_AgeOfOldestMess.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -247,7 +247,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  \
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=PUSH_WEBSOCKET_MESSAGE_LIVE.fifo > outs/SOCKET_MessDeleted.json
                                               
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'SocketSqsStats(Counts)' -m Sum
