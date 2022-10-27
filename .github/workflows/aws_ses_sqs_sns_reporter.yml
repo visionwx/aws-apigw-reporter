@@ -38,8 +38,8 @@ env:
 
 jobs:
 
-    ses_send:
-        name: ses_send
+    ses_stat:
+        name: ses_stat
         runs-on: ubuntu-latest
         outputs:
           reportUrl: ${{ steps.upload.outputs.reportUrl }}
@@ -70,7 +70,7 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 rm -rf outs
                 mkdir outs
-                mkdir -p outs/$ldate/ses_send
+                mkdir -p outs/$ldate/ses_stat
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SES \
                   --metric-name Send \
@@ -78,82 +78,26 @@ jobs:
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }}  > outs/ses_send.json
+                 aws cloudwatch get-metric-statistics \
+                  --namespace AWS/SES \
+                  --metric-name Bounce \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }}  > outs/ses_bounce.json               
 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'SesSend(Counts)' -m Sum
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'SesStat(Counts)' -m Sum
                 cp outs.json lines.html.json
-                cp lines.html outs/$ldate/ses_send
-                cp lines.html.json outs/$ldate/ses_send
+                cp lines.html outs/$ldate/ses_stat
+                cp lines.html.json outs/$ldate/ses_stat
             
             # Upload report
             - name: Upload report
               id: upload
               run: |
                 ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/ses_send s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/ses_send
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/ses_send/lines.html
-                echo "::set-output name=reportUrl::$reportUrl"
-
-    ses_reject:
-        name: ses_reject
-        runs-on: ubuntu-latest
-        outputs:
-          reportUrl: ${{ steps.upload.outputs.reportUrl }}
-        steps:
-            # Pull Code
-            - name: Pull repo
-              uses: actions/checkout@v2
-
-            # Configure AWS S3
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
-                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
-                  aws-region: ${{ env.AWS_S3_REGION }}
-            
-            # Get last day
-            - name: Get last day
-              id: get-date
-              run: |
-                date -d "1 day ago" +"%Y-%m-%d"
-
-            # Send Query Request
-            - name: Send query reuqest
-              id: query
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                cdate=`date +"%Y-%m-%d"`
-                rm -rf outs
-                mkdir outs
-                mkdir -p outs/$ldate/ses_reject
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/SES \
-                  --metric-name Reject \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  > outs/ses_reject_rate.json
-
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/SES \
-                  --metric-name Reputation.BounceRate \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  > outs/ses_bounce_rate.json
-                  
-                python3 parse_lambda_stats.py -mf 100 -f outs -p ${{ env.LBD_PERIOD }} -t 'SesBounceRejectRate(Percent)' -m Maximum
-                cp outs.json lines.html.json
-                cp lines.html outs/$ldate/ses_reject
-                cp lines.html.json outs/$ldate/ses_reject
-            
-            # Upload report
-            - name: Upload report
-              id: upload
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync outs/$ldate/ses_reject s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/ses_reject
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/ses_reject/lines.html
+                aws s3 sync outs/$ldate/ses_stat s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/ses_stat
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/ses_stat/lines.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
     trickle_sqs_stat:
@@ -196,7 +140,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=TRICKLE > outs/TRICKLE_MessReceived.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -220,7 +164,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=QueueName,Value=TRICKLE > outs/TRICKLE_MessDeleted.json
                                               
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'TrickleSqsStats(Counts)' -m Sum
@@ -279,7 +223,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }}  \
                   --dimensions Name=QueueName,Value=PUSH_WEBSOCKET_MESSAGE_LIVE.fifo > outs/SOCKET_MessReceived.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -287,7 +231,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }}  \
                   --dimensions Name=QueueName,Value=PUSH_WEBSOCKET_MESSAGE_LIVE.fifo > outs/SOCKET_MessSent.json                
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -295,7 +239,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }}  \
                   --dimensions Name=QueueName,Value=PUSH_WEBSOCKET_MESSAGE_LIVE.fifo > outs/SOCKET_AgeOfOldestMess.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -303,7 +247,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }}  \
                   --dimensions Name=QueueName,Value=PUSH_WEBSOCKET_MESSAGE_LIVE.fifo > outs/SOCKET_MessDeleted.json
                                               
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'SocketSqsStats(Counts)' -m Sum
@@ -362,7 +306,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }}  \
                   --dimensions Name=QueueName,Value=VERSION-CONTROL-LIVE.fifo > outs/VERSION_MessReceived.json
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -370,7 +314,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }}  \
                   --dimensions Name=QueueName,Value=VERSION-CONTROL-LIVE.fifo > outs/VERSION_MessSent.json                
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/SQS \
@@ -386,7 +330,7 @@ jobs:
                   --statistics Sum \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }}  
+                  --period ${{ env.LBD_PERIOD }}  \
                   --dimensions Name=QueueName,Value=VERSION-CONTROL-LIVE.fifo > outs/VERSION_MessDeleted.json
                                               
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'VersionSqsStats(Counts)' -m Sum
@@ -407,7 +351,7 @@ jobs:
     send-trickle:
         name: send-trickle
         runs-on: ubuntu-latest
-        needs: [ses_send,ses_reject,trickle_sqs_stat,socket_sqs_stat,version_sqs_stat]
+        needs: [ses_stat,trickle_sqs_stat,socket_sqs_stat,version_sqs_stat]
         steps:
             # Get last day
             - name: Get last day
@@ -425,4 +369,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"h2","value":"AWS SES/SQS Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.ses_send.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.ses_reject.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.trickle_sqs_stat.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.socket_sqs_stat.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.version_sqs_stat.outputs.reportUrl }}"}]'
+                blockData: '[{"type":"h2","value":"AWS SES/SQS Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.ses_stat.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.trickle_sqs_stat.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.socket_sqs_stat.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.version_sqs_stat.outputs.reportUrl }}"}]'

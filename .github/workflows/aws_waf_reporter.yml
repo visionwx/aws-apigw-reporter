@@ -86,7 +86,7 @@ jobs:
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=Rule,Value=ALL Name=WebACL,Value=cloudfront_dev > outs/waf_allRequest.json
+                  --dimensions Name=Rule,Value=ALL Name=WebACL,Value=cloudfront_dev > outs/waf_allBlockedRequests.json
 
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'WAFStats(Counts)' -m Sum
                 cp outs.json lines.html.json
