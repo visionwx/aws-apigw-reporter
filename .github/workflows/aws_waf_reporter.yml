@@ -1,0 +1,126 @@
+name: AWS_WAF_REPORTER
+
+on:
+    workflow_dispatch:
+    schedule:
+      - cron:  '20 1 * * *'
+
+# on:
+#   push:
+#     branches: [ dev_bob ]
+
+env:
+    AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
+    AWS_S3_KEY_SECRET: ${{ secrets.AWS_S3_KEY_SECRET }}
+    AWS_S3_BUCKET_NAME: boom2-resource
+    AWS_S3_COMPONENT_BUCKET_NAME: trickle-component
+    AWS_S3_REGION: us-east-1
+    AWS_CLOUD_FRONT_DISTRIBUTION_ID: E28OIAI99C3YGA
+    AWS_DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_KEY }}
+    AWS_DEPLOY_SECRET: ${{ secrets.AWS_DEPLOY_SECRET }}
+    AWS_LAMBDA_FUNCTION_NAME: trickle_ssr_dev
+    ECR_REGISTRY: 257417524232.dkr.ecr.us-east-1.amazonaws.com
+    IMAGE_NAME: trickle-ssr
+    AWS_DEFAULT_REGION: us-east-1
+    AWS_LAMBDA_EDGE_FUNCTION_NAME: trickle_edge_dev
+    AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
+    TRICKLE_WORKSPACE_ID: "30788161542029315"
+    TRICKLE_MEMBER_ID: "422649524830339077"
+    TRICKLE_CHANNEL_ID: "614087579146387462"
+    LBD_TRICKLE_APP: trickle-app-lambda-live
+    LBD_TRICKLE_ASYNC: trickle_async_handler_live
+    LBD_SOCKET_APP: socket_service_live
+    LBD_SOCKET_SEND: SEND_SOCKET_MESSAGE_LIVE
+    LBD_BAAS_APP: baas-vc-async-handler-live
+    LBD_BAAS_ASYNC: baas-vc-app-handler-live
+    LBD_PERIOD: 900
+    MYSQL_NAME: trickle
+
+jobs:
+
+    waf_stats:
+        name: waf_stats
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # Send Query Request
+            - name: Send query reuqest
+              id: query
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                cdate=`date +"%Y-%m-%d"`
+                rm -rf outs
+                mkdir outs
+                mkdir -p outs/$ldate/waf_stats
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/WAFV2 \
+                  --metric-name AllowedRequests \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=Rule,Value=ALL Name=WebACL,Value=cloudfront_dev > outs/waf_allRequest.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/WAFV2 \
+                  --metric-name BlockedRequests \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=Rule,Value=ALL Name=WebACL,Value=cloudfront_dev > outs/waf_allBlockedRequests.json
+
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'WAFStats(Counts)' -m Sum
+                cp outs.json lines.html.json
+                cp lines.html outs/$ldate/waf_stats
+                cp lines.html.json outs/$ldate/waf_stats
+            
+            # Upload report
+            - name: Upload report
+              id: upload
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                aws s3 sync outs/$ldate/waf_stats s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/waf_stats
+                reportUrl=https://devres.trickle.so/miniapps/$ldate/waf_stats/lines.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    send-trickle:
+        name: send-trickle
+        runs-on: ubuntu-latest
+        needs: [waf_stats]
+        steps:
+            # Get last day
+            - name: Get last day
+              id: getdate
+              run: |
+                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
+                echo "::set-output name=ldate::$ldate"
+
+            # Send trickle
+            - name: Send trickle
+              uses: visionwx/trickle-sender@v1.0.4
+              with:
+                trickleToken: ${{ secrets.trickleToken }}
+                workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
+                memberId: ${{ env.TRICKLE_MEMBER_ID }}
+                channelId: ${{ env.TRICKLE_CHANNEL_ID }}
+                blockType: trickle
+                blockData: '[{"type":"h2","value":"AWS WAF Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.waf_stats.outputs.reportUrl }}"}]'
