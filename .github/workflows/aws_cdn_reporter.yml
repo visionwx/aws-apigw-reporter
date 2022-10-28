@@ -130,13 +130,13 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/CloudFront \
                   --metric-name CacheHitRate \
-                  --statistics Maximum \
+                  --statistics Average \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DistributionId,Value=EX8S3M5HFCNJO Name=Region,Value=Global > outs/cdn_CacheHitRate.json
 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'CacheHitRate(Percent)' -m Maximum
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'CacheHitRate(Percent)' -m Average
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/cdn_cacherate
                 cp lines.html.json outs/$ldate/cdn_cacherate
@@ -186,13 +186,13 @@ jobs:
                 aws cloudwatch get-metric-statistics \
                   --namespace AWS/CloudFront \
                   --metric-name TotalErrorRate \
-                  --statistics Maximum \
+                  --statistics Average \
                   --start-time ${ldate}T00:00:00 \
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=DistributionId,Value=EX8S3M5HFCNJO Name=Region,Value=Global > outs/cdn_TotalErrorRate.json
 
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'TotalErrorRate(Percent)' -m Maximum
+                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'TotalErrorRate(Percent)' -m Average
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/cdn_error
                 cp lines.html.json outs/$ldate/cdn_error
