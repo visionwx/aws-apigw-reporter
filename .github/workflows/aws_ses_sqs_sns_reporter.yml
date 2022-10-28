@@ -26,7 +26,7 @@ env:
     AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
     TRICKLE_WORKSPACE_ID: ${{ secrets.TRICKLE_WORKSPACE_ID }}
     TRICKLE_MEMBER_ID: ${{ secrets.TRICKLE_MEMBER_ID }}
-    TRICKLE_CHANNEL_ID: ${{ secrets.TRICKLE_CHANNEL_ID }}
+    TRICKLE_CHANNEL_ID: "619693070752940038"
     LBD_TRICKLE_APP: trickle-app-lambda-live
     LBD_TRICKLE_ASYNC: trickle_async_handler_live
     LBD_SOCKET_APP: socket_service_live
