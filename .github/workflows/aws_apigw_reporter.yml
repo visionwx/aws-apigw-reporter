@@ -20,9 +20,9 @@ env:
     AWS_DEFAULT_REGION: us-east-1
     AWS_LAMBDA_EDGE_FUNCTION_NAME: trickle_edge_dev
     AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
-    TRICKLE_WORKSPACE_ID: "30788161542029315"
-    TRICKLE_MEMBER_ID: "422649524830339077"
-    TRICKLE_CHANNEL_ID: "614087579146387462"
+    TRICKLE_WORKSPACE_ID: ${{ secrets.TRICKLE_WORKSPACE_ID }}
+    TRICKLE_MEMBER_ID: ${{ secrets.TRICKLE_MEMBER_ID }}
+    TRICKLE_CHANNEL_ID: ${{ secrets.TRICKLE_CHANNEL_ID }}
     LBD_TRICKLE_APP: trickle-app-lambda-live
     LBD_TRICKLE_ASYNC: trickle_async_handler_live
     LBD_SOCKET_APP: socket_service_live
@@ -190,98 +190,3 @@ jobs:
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
                 blockData: '[{"type":"h2","value":"API Gateway Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"embed","value":"${{ needs.status.outputs.reportUrl }}"},{"type":"embed","value":"${{ needs.rps.outputs.reportUrl }}"}]'
-
-    lambda_invocation:
-        name: lambda_invocation
-        runs-on: ubuntu-latest
-        outputs:
-          reportUrl: ${{ steps.upload.outputs.reportUrl }}
-        steps:
-            # Pull Code
-            - name: Pull repo
-              uses: actions/checkout@v2
-
-            # Configure AWS S3
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
-                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
-                  aws-region: ${{ env.AWS_S3_REGION }}
-            
-            # Get last day
-            - name: Get last day
-              id: get-date
-              run: |
-                date -d "1 day ago" +"%Y-%m-%d"
-
-            # Send Query Request
-            - name: Send query reuqest
-              id: query
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                cdate=`date +"%Y-%m-%d"`
-                rm -rf outs
-                mkdir outs
-                mkdir -p outs/$ldate/invocations
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/Lambda \
-                  --metric-name Invocations \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP }} > outs/trickle_app.json
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/Lambda \
-                  --metric-name Invocations \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_ASYNC }} > outs/trickle_async.json
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/Lambda \
-                  --metric-name Invocations \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_APP }} > outs/socket_app.json
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/Lambda \
-                  --metric-name Invocations \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=FunctionName,Value=${{ env.LBD_SOCKET_SEND }} > outs/socket_send.json
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/Lambda \
-                  --metric-name Invocations \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_APP }} > outs/baas_app.json
-                aws cloudwatch get-metric-statistics \
-                  --namespace AWS/Lambda \
-                  --metric-name Invocations \
-                  --statistics Sum \
-                  --start-time ${ldate}T00:00:00 \
-                  --end-time ${cdate}T00:00:00 \
-                  --period ${{ env.LBD_PERIOD }} \
-                  --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
-                python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t Invocations
-                cp outs.json lines_with_pie.html.json
-                cp lines_with_pie.html out/$ldate/invocations
-                cp lines_with_pie.html.json out/$ldate/invocations
-            
-            # Upload report
-            - name: Upload report
-              id: upload
-              run: |
-                ldate=`date -d "1 day ago" +"%Y-%m-%d"`
-                aws s3 sync out/$ldate/invocations s3://${{ env.AWS_S3_BUCKET_NAME }}/miniapps/$ldate/invocations
-                reportUrl=https://devres.trickle.so/miniapps/$ldate/invocations/lines_with_pie.html
-                echo "::set-output name=reportUrl::$reportUrl"
