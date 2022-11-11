@@ -384,7 +384,7 @@ jobs:
 
             # Send trickle
             - name: Send trickle
-              uses: visionwx/trickle-sender@v1.0.4
+              uses: visionwx/trickle-sender@v1.0.5
               with:
                 trickleToken: ${{ secrets.trickleToken }}
                 workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
