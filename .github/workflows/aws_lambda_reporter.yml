@@ -29,6 +29,11 @@ env:
     LBD_SOCKET_SEND: SEND_SOCKET_MESSAGE_LIVE
     LBD_BAAS_APP: baas-vc-async-handler-live
     LBD_BAAS_ASYNC: baas-vc-app-handler-live
+    LBD_TRICKLE_NTF_ASYNC: trickle_ntf_handler_live
+    LBD_TRICKLE_APP_V2: trickle-app-v2-live
+    LBD_TRICKLE_SUBS: trickle-subs-live
+    LBD_TRICKLE_SUBS_ASYNC: trickle-subs-async-live
+    LBD_TRICKLE_CMD_HANDLER: trickle_CmdBus_LIVE
     LBD_PERIOD: 900
 
 jobs:
@@ -114,6 +119,47 @@ jobs:
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Invocations \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_NTF_ASYNC }} > outs/ntf_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Invocations \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP_V2 }} > outs/app_v2.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Invocations \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS }} > outs/trickle_subs.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Invocations \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS_ASYNC }} > outs/subs_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Invocations \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_CMD_HANDLER }} > outs/trickle_cmdbus.json                
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'Invocations(Counts)'
                 cp outs.json lines_with_pie.html.json
                 cp lines_with_pie.html outs/$ldate/invocations
@@ -209,6 +255,48 @@ jobs:
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name ConcurrentExecutions \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_NTF_ASYNC }} > outs/ntf_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name ConcurrentExecutions \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP_V2 }} > outs/app_v2.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name ConcurrentExecutions \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS }} > outs/trickle_subs.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name ConcurrentExecutions \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS_ASYNC }} > outs/subs_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name ConcurrentExecutions \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_CMD_HANDLER }} > outs/trickle_cmdbus.json
+
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'MaximumConcurrentExecutions(Count)' -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/concurrent
@@ -304,11 +392,53 @@ jobs:
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_NTF_ASYNC }} > outs/ntf_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP_V2 }} > outs/app_v2.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS }} > outs/trickle_subs.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS_ASYNC }} > outs/subs_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Errors \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_CMD_HANDLER }} > outs/trickle_cmdbus.json
+
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'Errors(Counts)'
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/error
                 cp lines.html.json outs/$ldate/error
-            
+
             # Upload report
             - name: Upload report
               id: upload
@@ -399,6 +529,48 @@ jobs:
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+
+               aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_NTF_ASYNC }} > outs/ntf_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP_V2 }} > outs/app_v2.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS }} > outs/trickle_subs.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS_ASYNC }} > outs/subs_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Throttles \
+                  --statistics Sum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_CMD_HANDLER }} > outs/trickle_cmdbus.json
+
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'Throttles(Counts)'
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/throttles
@@ -494,6 +666,48 @@ jobs:
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
+
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_NTF_ASYNC }} > outs/ntf_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_APP_V2 }} > outs/app_v2.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS }} > outs/trickle_subs.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_SUBS_ASYNC }} > outs/subs_async.json
+                aws cloudwatch get-metric-statistics \
+                  --namespace AWS/Lambda \
+                  --metric-name Duration \
+                  --statistics Maximum \
+                  --start-time ${ldate}T00:00:00 \
+                  --end-time ${cdate}T00:00:00 \
+                  --period ${{ env.LBD_PERIOD }} \
+                  --dimensions Name=FunctionName,Value=${{ env.LBD_TRICKLE_CMD_HANDLER }} > outs/trickle_cmdbus.json
+
                 python3 parse_lambda_stats.py -f outs -p ${{ env.LBD_PERIOD }} -t 'MaximumDuration(Milliseconds)' -m Maximum
                 cp outs.json lines.html.json
                 cp lines.html outs/$ldate/duration

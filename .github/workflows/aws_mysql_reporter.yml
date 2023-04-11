@@ -34,7 +34,7 @@ env:
     LBD_BAAS_APP: baas-vc-async-handler-live
     LBD_BAAS_ASYNC: baas-vc-app-handler-live
     LBD_PERIOD: 900
-    MYSQL_NAME: trickle
+    MYSQL_NAME: trickledb
 
 jobs:
 
