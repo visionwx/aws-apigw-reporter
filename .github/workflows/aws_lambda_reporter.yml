@@ -471,7 +471,7 @@ jobs:
               id: get-date
               run: |
                 date -d "1 day ago" +"%Y-%m-%d"
-
+                
             # Send Query Request
             - name: Send query reuqest
               id: query
@@ -529,8 +529,7 @@ jobs:
                   --end-time ${cdate}T00:00:00 \
                   --period ${{ env.LBD_PERIOD }} \
                   --dimensions Name=FunctionName,Value=${{ env.LBD_BAAS_ASYNC }} > outs/baas_async.json
-
-               aws cloudwatch get-metric-statistics \
+                aws cloudwatch get-metric-statistics \
                   --namespace AWS/Lambda \
                   --metric-name Throttles \
                   --statistics Sum \
