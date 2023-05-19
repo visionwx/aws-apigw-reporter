@@ -61,14 +61,14 @@ jobs:
 
             # run api test
             - name: run api test
-              run: apifox run live_api_minitor.apifox-cli.json -r html
+              run: apifox run live_api_minitor.apifox-cli.json -r html --out-file api --color on --silent --ignore-redirects --insecure  --delay-request 1000 --timeout-request 3600000 -n 1
 
             # upload api test result to S3
             - name: Upload report
               id: upload
               run: |
                 cdate=`date +"%Y-%m-%d"`
-                mv apifox-report/apifox-report-*.html apifox-report/api.html
+                # mv apifox-report/apifox-report-*.html apifox-report/api.html
                 aws s3 sync apifox-report/ s3://${{ env.AWS_S3_BUCKET_NAME }}/apifox-report/$cdate
                 reportUrl=https://devres.trickle.so/apifox-report/$cdate/api.html
                 echo "::set-output name=reportUrl::$reportUrl"
