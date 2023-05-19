@@ -25,7 +25,7 @@ env:
     TRICKLE_CHANNEL_ID: "1222805664804372486"
 
 jobs:
-    rps:
+    api_test:
         name: api_test
         runs-on: ubuntu-latest
         outputs:
