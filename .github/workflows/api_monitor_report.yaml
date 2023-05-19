@@ -61,10 +61,11 @@ jobs:
 
             # run api test
             - name: run api test
-              run: apifox run live_api_minitor.apifox-cli.json -r html --out-file api --color on --silent --ignore-redirects --insecure  --delay-request 1000 --timeout-request 3600000 -n 1
+              run: apifox run live_api_minitor.apifox-cli.json -r html --out-file api --color on --silent --ignore-redirects --insecure  --delay-request 1000 -n 1
 
             # upload api test result to S3
             - name: Upload report
+              if: ${{ always() }}
               id: upload
               run: |
                 cdate=`date +"%Y-%m-%d"`
