@@ -71,7 +71,7 @@ jobs:
                 cdate=`date +"%Y-%m-%d"`
                 # mv apifox-report/apifox-report-*.html apifox-report/api.html
                 aws s3 sync apifox-reports/ s3://${{ env.AWS_S3_BUCKET_NAME }}/apifox-reports/$cdate
-                reportUrl=https://devres.trickle.so/apifox-report/$cdate/api.html
+                reportUrl=https://devres.trickle.so/apifox-reports/$cdate/api.html
                 echo "::set-output name=reportUrl::$reportUrl"
 
     send-trickle:
