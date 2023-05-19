@@ -1,0 +1,97 @@
+name: Trickle_api_monitor_report
+
+on:
+    workflow_dispatch:
+    schedule:
+      - cron:  '10 1 * * *'
+
+env:
+    AWS_S3_KEY_ID: ${{ secrets.AWS_S3_KEY_ID }}
+    AWS_S3_KEY_SECRET: ${{ secrets.AWS_S3_KEY_SECRET }}
+    AWS_S3_BUCKET_NAME: boom2-resource
+    AWS_S3_COMPONENT_BUCKET_NAME: trickle-component
+    AWS_S3_REGION: us-east-1
+    AWS_CLOUD_FRONT_DISTRIBUTION_ID: E28OIAI99C3YGA
+    AWS_DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_KEY }}
+    AWS_DEPLOY_SECRET: ${{ secrets.AWS_DEPLOY_SECRET }}
+    AWS_LAMBDA_FUNCTION_NAME: trickle_ssr_dev
+    ECR_REGISTRY: 257417524232.dkr.ecr.us-east-1.amazonaws.com
+    IMAGE_NAME: trickle-ssr
+    AWS_DEFAULT_REGION: us-east-1
+    AWS_LAMBDA_EDGE_FUNCTION_NAME: trickle_edge_dev
+    AWS_S3_LAMBDA_PACKAGE_BUCKET_NAME: lambda-package-20220712
+    TRICKLE_WORKSPACE_ID: ${{ secrets.TRICKLE_WORKSPACE_ID }}
+    TRICKLE_MEMBER_ID: ${{ secrets.TRICKLE_MEMBER_ID }}
+    TRICKLE_CHANNEL_ID: "1222805664804372486"
+
+jobs:
+    rps:
+        name: api_test
+        runs-on: ubuntu-latest
+        outputs:
+          reportUrl: ${{ steps.upload.outputs.reportUrl }}
+        steps:
+            # Pull Code
+            - name: Pull repo
+              uses: actions/checkout@v2
+
+            # Configure AWS S3
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ env.AWS_DEPLOY_KEY }}
+                  aws-secret-access-key: ${{ env.AWS_DEPLOY_SECRET }}
+                  aws-region: ${{ env.AWS_S3_REGION }}
+
+            # install nodejs
+            - name: Setup Node.js --lts
+              uses: actions/setup-node@master
+              with:
+                  node-version: '16.13.1'    
+            
+            # install apifox cli
+            - name: install apifox cli  
+              run: npm install -g apifox-cli
+            
+            # Get last day
+            - name: Get last day
+              id: get-date
+              run: |
+                date -d "1 day ago" +"%Y-%m-%d"
+
+            # run api test
+            - name: run api test
+              run: apifox run live_api_minitor.apifox-cli.json -r html
+
+            # upload api test result to S3
+            - name: Upload report
+              id: upload
+              run: |
+                cdate=`date +"%Y-%m-%d"`
+                mv apifox-report/apifox-report-*.html apifox-report/api.html
+                aws s3 sync apifox-report/ s3://${{ env.AWS_S3_BUCKET_NAME }}/apifox-report/$cdate
+                reportUrl=https://devres.trickle.so/apifox-report/$cdate/api.html
+                echo "::set-output name=reportUrl::$reportUrl"
+
+    send-trickle:
+      name: send-trickle
+      runs-on: ubuntu-latest
+      if: ${{ always() }}
+      needs: [api_test]
+      steps:
+      # Get last day
+        - name: Get last day
+          id: getdate
+          run: |
+            ldate=`date +"%Y-%m-%d"`
+            echo "::set-output name=ldate::$ldate"
+      # Send trickle
+        - name: Send trickle
+          uses: visionwx/trickle-sender@v1.0.5
+          with:
+            trickleToken: ${{ secrets.trickleToken }}
+            workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
+            memberId: ${{ env.TRICKLE_MEMBER_ID }}
+            channelId: ${{ env.TRICKLE_CHANNEL_ID }}
+            blockType: trickle
+            blockData: '[{"type":"h3","value":"API Monitoring report on ${{ steps.getdate.outputs.ldate }}"},{"type":"embedext","value": {"src": "${{ needs.api_test.outputs.reportUrl }}", "height": 500 }}]'
