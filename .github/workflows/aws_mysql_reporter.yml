@@ -358,7 +358,7 @@ jobs:
             - name: Send trickle
               uses: visionwx/trickle-sender@v1.0.5
               with:
-                trickleToken: ${{ secrets.trickleToken }}
+                trickleToken: ${{ secrets.TRICKLETOKEN }}
                 workspaceId: ${{ env.TRICKLE_WORKSPACE_ID }}
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
