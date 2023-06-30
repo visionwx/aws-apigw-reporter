@@ -173,4 +173,4 @@ jobs:
                 memberId: ${{ env.TRICKLE_MEMBER_ID }}
                 channelId: ${{ env.TRICKLE_CHANNEL_ID }}
                 blockType: trickle
-                blockData: '[{"type":"h2","value":"AWS ECS Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.ecs_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.ecs_memory.outputs.reportUrl }}"}]'
+                blockData: '[{"type":"h2","value":"AWS ECS Report for ${{ steps.getdate.outputs.ldate }}"},{"type":"embed","value":"${{ needs.ecs_cpu.outputs.reportUrl }}"},{"type":"text","value":""},{"type":"embed","value":"${{ needs.ecs_memory.outputs.reportUrl }}"}]'
